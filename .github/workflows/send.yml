@@ -28,6 +28,7 @@ jobs:
       HEADLESS: "true"
       TRACE: "false"
       TZ: "Asia/Shanghai"
+      DOUYIN_HOME_WARMUP: "true"
     steps:
       - uses: actions/checkout@v4
         with:
