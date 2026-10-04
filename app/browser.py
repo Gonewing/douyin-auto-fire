@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -96,6 +97,13 @@ async def open_douyin(settings: Settings) -> AsyncIterator[BrowserSession]:
             await context.add_cookies(_normalize_cookies(cookies))
 
         page = await context.new_page()
+        # Optional normal homepage initialization before opening the chat SPA.
+        # Keep existing risk checks; this neither changes credentials nor skips verification.
+        if os.getenv("DOUYIN_HOME_WARMUP", "false").lower() == "true":
+            await page.goto("https://www.douyin.com/", wait_until="domcontentloaded")
+            await page.wait_for_timeout(5_000)
+            if await _any_visible(page, RISK_MARKERS, timeout_ms=2_000):
+                raise RiskControlError("抖音要求进行安全验证，任务已停止")
         if settings.trace:
             await context.tracing.start(screenshots=True, snapshots=True, sources=False)
         yield BrowserSession(page=page, context=context)
